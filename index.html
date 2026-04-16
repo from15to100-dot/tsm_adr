@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TSM · LIVE</title>
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TSM">
+<meta name="theme-color" content="#020c12">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -301,7 +310,22 @@
     cursor: not-allowed;
   }
 
-  /* Flash animation on update */
+  .install-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid rgba(0,245,255,0.35);
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .install-btn:hover { background: var(--cyan-dim); border-color: var(--cyan); }
+  .install-btn svg { width: 12px; height: 12px; fill: currentColor; }
   @keyframes flash {
     0%   { background: rgba(0,245,255,0.15); }
     100% { background: transparent; }
@@ -349,6 +373,10 @@
 
   <div class="footer">
     <span class="update-time" id="updateTime">LOADING...</span>
+    <button class="install-btn" id="installBtn" onclick="installApp()">
+      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+      INSTALL
+    </button>
     <button class="refresh-btn" id="refreshBtn" onclick="fetchPrice()">⟳ REFRESH</button>
   </div>
 </div>
@@ -441,6 +469,41 @@ function now() {
 // Auto-refresh every 60 seconds
 fetchPrice();
 setInterval(fetchPrice, 60000);
+
+// ── PWA: Service Worker 註冊 ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[SW] registered:', reg.scope))
+      .catch(err => console.warn('[SW] registration failed:', err));
+  });
+}
+
+// ── PWA: 安裝提示 ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'flex';
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(choice => {
+    if (choice.outcome === 'accepted') {
+      document.getElementById('installBtn').style.display = 'none';
+    }
+    deferredPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
+  deferredPrompt = null;
+});
 </script>
 </body>
 </html>
