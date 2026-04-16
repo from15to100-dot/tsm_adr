@@ -2,7 +2,7 @@
   "name": "TSM · LIVE",
   "short_name": "TSM",
   "description": "TSM ADR 即時股價監控",
-  "start_url": "./index.html",
+  "start_url": "./tsm_adr/",
   "display": "standalone",
   "background_color": "#020c12",
   "theme_color": "#020c12",
