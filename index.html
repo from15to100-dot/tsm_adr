@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSM · LIVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00f5ff;
+    --cyan-dim: rgba(0,245,255,0.15);
+    --cyan-mid: rgba(0,245,255,0.4);
+    --green: #39ff14;
+    --red: #ff3b5c;
+    --gold: #ffd700;
+    --bg: #020c12;
+    --panel: rgba(0,20,30,0.85);
+    --border: rgba(0,245,255,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--cyan);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* Scan line */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -100%;
+    left: 0; right: 0;
+    height: 200%;
+    background: linear-gradient(transparent 50%, rgba(0,245,255,0.015) 50%);
+    background-size: 100% 4px;
+    animation: scan 8s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes scan { to { transform: translateY(50%); } }
+
+  /* Corner decorations */
+  .corner {
+    position: fixed;
+    width: 80px; height: 80px;
+    opacity: 0.4;
+  }
+  .corner-tl { top: 20px; left: 20px; border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+  .corner-tr { top: 20px; right: 20px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
+  .corner-bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+  .corner-br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
+
+  /* Main card */
+  .card {
+    width: min(480px, 95vw);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    position: relative;
+    padding: 36px 40px;
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 0 60px rgba(0,245,255,0.08),
+      inset 0 0 60px rgba(0,245,255,0.03);
+    animation: cardIn 0.8s ease both;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 30px; right: 30px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .ticker-block {}
+  .ticker {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+    color: #fff;
+    text-shadow: 0 0 20px var(--cyan);
+  }
+
+  .exchange {
+    font-size: 0.7rem;
+    color: rgba(0,245,255,0.5);
+    letter-spacing: 0.2em;
+    margin-top: 2px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: var(--green);
+    letter-spacing: 0.15em;
+    background: rgba(57,255,20,0.08);
+    border: 1px solid rgba(57,255,20,0.3);
+    padding: 4px 10px;
+    margin-top: 4px;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--green); }
+    50%       { opacity: 0.4; box-shadow: none; }
+  }
+
+  .company-name {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: rgba(0,245,255,0.5);
+    letter-spacing: 0.05em;
+    margin-bottom: 28px;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 20px 0;
+  }
+
+  /* Price area */
+  .price-area {
+    margin-bottom: 4px;
+  }
+
+  .price-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: rgba(0,245,255,0.4);
+    margin-bottom: 8px;
+  }
+
+  .price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .price {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 3.2rem;
+    color: #fff;
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 30px rgba(255,255,255,0.3);
+    transition: color 0.3s;
+    line-height: 1;
+  }
+
+  .price.up   { color: var(--red);   text-shadow: 0 0 20px rgba(255,59,92,0.5); }
+  .price.down { color: var(--green); text-shadow: 0 0 20px rgba(57,255,20,0.5); }
+
+  .currency {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.4);
+    font-family: 'Orbitron', monospace;
+    align-self: flex-start;
+    margin-top: 8px;
+  }
+
+  /* Change */
+  .change-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 0;
+  }
+
+  .change-val, .change-pct {
+    font-size: 1rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 400;
+    padding: 4px 12px;
+    border: 1px solid;
+    letter-spacing: 0.05em;
+  }
+
+  .change-val.up, .change-pct.up {
+    color: var(--red);
+    border-color: rgba(255,59,92,0.35);
+    background: rgba(255,59,92,0.07);
+  }
+
+  .change-val.down, .change-pct.down {
+    color: var(--green);
+    border-color: rgba(57,255,20,0.35);
+    background: rgba(57,255,20,0.07);
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.6rem;
+    color: rgba(0,245,255,0.3);
+    letter-spacing: 0.15em;
+  }
+
+  .update-time { color: rgba(0,245,255,0.4); }
+
+  /* Error state */
+  .error-msg {
+    color: var(--red);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+    padding: 20px;
+    border: 1px solid rgba(255,59,92,0.3);
+    background: rgba(255,59,92,0.05);
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* Loading shimmer */
+  .shimmer {
+    display: inline-block;
+    background: linear-gradient(90deg, var(--cyan-dim), var(--cyan-mid), var(--cyan-dim));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 2px;
+    color: transparent;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  .loading .price,
+  .loading .change-val,
+  .loading .change-pct {
+    background: linear-gradient(90deg, rgba(0,245,255,0.1), rgba(0,245,255,0.25), rgba(0,245,255,0.1));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    color: transparent !important;
+    border-radius: 3px;
+    text-shadow: none !important;
+  }
+
+  /* Refresh button */
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .refresh-btn:hover {
+    background: var(--cyan-dim);
+    border-color: var(--cyan);
+  }
+  .refresh-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Flash animation on update */
+  @keyframes flash {
+    0%   { background: rgba(0,245,255,0.15); }
+    100% { background: transparent; }
+  }
+  .flash { animation: flash 0.5s ease; }
+</style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<div class="card loading" id="card">
+  <div class="header">
+    <div class="ticker-block">
+      <div class="ticker">TSM</div>
+      <div class="exchange">NYSE · ADR</div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+  </div>
+
+  <div class="company-name">Taiwan Semiconductor Manufacturing Co.</div>
+
+  <div class="price-area">
+    <div class="price-label">CURRENT PRICE</div>
+    <div class="price-row">
+      <span class="currency">USD</span>
+      <span class="price" id="price">---.--.--</span>
+    </div>
+  </div>
+
+  <div class="change-row">
+    <span class="change-val" id="changeVal">+0.00</span>
+    <span class="change-pct" id="changePct">(0.00%)</span>
+  </div>
+
+  <div class="error-msg" id="errorMsg">
+    ⚠ 無法取得即時資料，請稍後再試或手動刷新
+  </div>
+
+  <div class="footer">
+    <span class="update-time" id="updateTime">LOADING...</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="fetchPrice()">⟳ REFRESH</button>
+  </div>
+</div>
+
+<script>
+const SYMBOL = 'TSM';
+const API_KEY = 'd76ivbhr01qtg3ndpes0d76ivbhr01qtg3ndpesg';
+
+async function fetchPrice() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  document.getElementById('card').classList.add('loading');
+  document.getElementById('errorMsg').style.display = 'none';
+
+  try {
+    const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${SYMBOL}&token=${API_KEY}`);
+    const q = await quoteRes.json();
+
+    if (!q.c || q.c === 0) throw new Error('No data');
+
+    updateUI({
+      price:  q.c,
+      change: q.d,
+      pct:    q.dp,
+    });
+
+  } catch (e) {
+    document.getElementById('card').classList.remove('loading');
+    document.getElementById('errorMsg').style.display = 'block';
+    document.getElementById('updateTime').textContent = '⚠ FETCH FAILED · ' + now();
+  }
+
+  btn.disabled = false;
+}
+
+function updateUI(d) {
+  const isUp = d.change >= 0;
+  const dir  = isUp ? 'up' : 'down';
+  const sign = isUp ? '+' : '';
+
+  setText('price',    fmt(d.price, 2));
+  setText('changeVal', sign + fmt(d.change, 2));
+  setText('changePct', `(${sign}${fmt(d.pct, 2)}%)`);
+
+  const priceEl = document.getElementById('price');
+  priceEl.className = `price ${dir}`;
+
+  const cvEl = document.getElementById('changeVal');
+  cvEl.className = `change-val ${dir}`;
+  const cpEl = document.getElementById('changePct');
+  cpEl.className = `change-pct ${dir}`;
+
+  document.getElementById('updateTime').textContent = 'UPDATED · ' + now();
+  document.getElementById('card').classList.remove('loading');
+
+  // Flash effect
+  document.getElementById('card').classList.remove('flash');
+  void document.getElementById('card').offsetWidth;
+  document.getElementById('card').classList.add('flash');
+}
+
+function setText(id, val) {
+  document.getElementById(id).textContent = val;
+}
+
+function fmt(n, dec) {
+  if (n == null || isNaN(n)) return 'N/A';
+  return Number(n).toFixed(dec);
+}
+
+function fmtVol(v) {
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+  return v.toString();
+}
+
+function fmtCap(v) {
+  if (v >= 1e12) return (v/1e12).toFixed(2) + 'T';
+  if (v >= 1e9)  return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6)  return (v/1e6).toFixed(2) + 'M';
+  return v.toString();
+}
+
+function now() {
+  return new Date().toLocaleTimeString('zh-TW', {
+    hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+}
+
+// Auto-refresh every 60 seconds
+fetchPrice();
+setInterval(fetchPrice, 60000);
+</script>
+</body>
+</html>
