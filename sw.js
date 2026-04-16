@@ -2,7 +2,7 @@ const CACHE_NAME = 'tsm-live-v1';
 
 // 快取的靜態資源（字型由 Google CDN 提供，不強制快取）
 const STATIC_ASSETS = [
-  './tsm_adr.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
